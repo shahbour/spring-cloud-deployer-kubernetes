@@ -16,9 +16,20 @@
 
 package org.springframework.cloud.deployer.spi.kubernetes;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Job;
+import io.fabric8.kubernetes.api.model.JobSpec;
+import io.fabric8.kubernetes.api.model.JobSpecBuilder;
+import io.fabric8.kubernetes.api.model.JobStatus;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodSpec;
+import io.fabric8.kubernetes.api.model.PodStatus;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+
 import org.hashids.Hashids;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.deployer.spi.core.AppDeploymentRequest;
@@ -78,7 +89,7 @@ public class KubernetesTaskLauncher extends AbstractKubernetesDeployer implement
 			if (properties.isCreateJob()){
 				launchJob(appId, podSpec, podLabelMap, idMap, podAnnotationMap);
 			} else {
-				launchPod(appId, podSpec, podLabelMap, idMap);
+				launchPod(appId, podSpec, podLabelMap, idMap, podAnnotationMap);
 			}
 			return appId;
 		} catch (RuntimeException e) {
@@ -150,13 +161,14 @@ public class KubernetesTaskLauncher extends AbstractKubernetesDeployer implement
 	}
 
 
-	private void launchPod(String appId, PodSpec podSpec, Map<String, String> labelMap, Map<String, String> idMap) {
+	private void launchPod(String appId, PodSpec podSpec, Map<String, String> labelMap, Map<String, String> idMap, Map<String, String> podAnnotationMap) {
 		client.pods()
 				.inNamespace(client.getNamespace()).createNew()
 				.withNewMetadata()
 				.withName(appId)
 				.withLabels(labelMap)
 				.addToLabels(idMap)
+				.addToAnnotations(podAnnotationMap)
 				.endMetadata()
 				.withSpec(podSpec)
 				.done();
